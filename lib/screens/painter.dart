@@ -11,9 +11,22 @@ class Painter extends StatefulWidget {
 }
 
 class _PainterState extends State<Painter> {
-  List<DrawingArea> points = [];
-  late Color selectedColor;
   late double strokeWidth;
+
+  final List<Color> availableColors = [
+    Colors.black,
+    Colors.red,
+    Colors.amber,
+    Colors.blue,
+    Colors.green,
+    Colors.brown,
+  ];
+
+  List<DrawingPoint> historyDrawingPoints = [];
+  List<DrawingPoint> drawingPoints = [];
+  Color selectedColor = Colors.black;
+  // double selectedWidth = 2.0;
+  DrawingPoint? currentDrawingPoint;
 
   @override
   void initState() {
@@ -28,125 +41,183 @@ class _PainterState extends State<Painter> {
     final double height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-        body: SafeArea(
-      child: Stack(children: [
-        Container(
-          decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                Color.fromRGBO(138, 35, 135, 1.0),
-                Color.fromRGBO(233, 64, 87, 1.0),
-                Color.fromRGBO(242, 113, 33, 1.0),
-              ])),
-        ),
-        Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                height: height * 0.80,
-                width: width * 0.80,
-                decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 5.0,
-                        spreadRadius: 1.0,
-                      ),
-                    ]),
-                child: GestureDetector(
-                  onPanDown: (details) {
-                    setState(() {
-                      points.add(DrawingArea(
-                          point: details.localPosition,
-                          areaPaint: Paint()
-                            ..strokeCap = StrokeCap.round
-                            ..isAntiAlias = true
-                            ..color = selectedColor
-                            ..strokeWidth = strokeWidth));
-                    });
-                  },
-                  onPanUpdate: (details) {
-                    setState(() {
-                      points.add(DrawingArea(
-                          point: details.localPosition,
-                          areaPaint: Paint()
-                            ..strokeCap = StrokeCap.round
-                            ..isAntiAlias = true
-                            ..color = selectedColor
-                            ..strokeWidth = strokeWidth));
-                    });
-                  },
-                  onPanEnd: (details) {
-                    // setState(() {
-
-                    // });
-                  },
-                  child: SizedBox.expand(
-                    child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(20.0)),
-                      child: CustomPaint(
-                        painter: MyCustomPainter(points: points),
+      body: SafeArea(
+        child: Stack(children: [
+          Container(
+            decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                  Color.fromRGBO(138, 35, 135, 1.0),
+                  Color.fromRGBO(233, 64, 87, 1.0),
+                  Color.fromRGBO(242, 113, 33, 1.0),
+                ])),
+          ),
+          Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: height * 0.010,
+                ),
+                Container(
+                  height: height * 0.75,
+                  width: width * 0.80,
+                  decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(20)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 5.0,
+                          spreadRadius: 1.0,
+                        ),
+                      ]),
+                  child: GestureDetector(
+                    onPanStart: (details) {
+                      setState(() {
+                        currentDrawingPoint = DrawingPoint(
+                          id: DateTime.now().microsecondsSinceEpoch,
+                          offsets: [details.localPosition],
+                          color: selectedColor,
+                          width: strokeWidth,
+                        );
+                        if (currentDrawingPoint != null) {
+                          drawingPoints.add(currentDrawingPoint!);
+                          historyDrawingPoints = List.of(drawingPoints);
+                        }
+                      });
+                    },
+                    onPanUpdate: (details) {
+                      setState(() {
+                        if (currentDrawingPoint != null) {
+                          currentDrawingPoint = currentDrawingPoint!.copyWith(
+                            offsets: [
+                              ...currentDrawingPoint!.offsets,
+                              details.localPosition
+                            ],
+                          );
+                          drawingPoints.last = currentDrawingPoint!;
+                          historyDrawingPoints = List.of(drawingPoints);
+                        }
+                      });
+                    },
+                    onPanEnd: (_) {
+                      currentDrawingPoint = null;
+                    },
+                    child: SizedBox.expand(
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20.0)),
+                        child: CustomPaint(
+                          painter: DrawingPainter(drawingPoints: drawingPoints),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(
-                height: 30,
-              ),
-              Container(
-                width: width * 0.80,
-                decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(20.0))),
-                child: Row(
-                  children: <Widget>[
-                    IconButton(
-                        icon: Icon(
-                          Icons.color_lens,
-                          color: selectedColor,
+                SizedBox(
+                  height: height * 0.010,
+                ),
+                Container(
+                  width: width * 0.80,
+                  decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20.0))),
+                  child: Row(
+                    children: <Widget>[
+                      IconButton(
+                          icon: Icon(
+                            Icons.color_lens,
+                            color: selectedColor,
+                          ),
+                          onPressed: () {
+                            colorPickerDialog();
+                          }),
+                      Expanded(
+                        child: Slider(
+                          min: 1.0,
+                          max: 5.0,
+                          label: "Stroke $strokeWidth",
+                          activeColor: selectedColor,
+                          value: strokeWidth,
+                          onChanged: (double value) {
+                            setState(() {
+                              strokeWidth = value;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          colorPickerDialog();
-                        }),
-                    Expanded(
-                      child: Slider(
-                        min: 1.0,
-                        max: 5.0,
-                        label: "Stroke $strokeWidth",
-                        activeColor: selectedColor,
-                        value: strokeWidth,
-                        onChanged: (double value) {
+                      ),
+                      IconButton(
+                          icon: const Icon(
+                            Icons.layers_clear,
+                            color: Colors.black,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              drawingPoints.clear();
+                            });
+                          }),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: height * 0.010,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (drawingPoints.isNotEmpty &&
+                            historyDrawingPoints.isNotEmpty) {
                           setState(() {
-                            strokeWidth = value;
+                            drawingPoints.removeLast();
                           });
-                        },
+                        }
+                      },
+                      child: Container(
+                        width: width * 0.15,
+                        height: height * 0.07,
+                        decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(20))),
+                        child: const Icon(Icons.undo),
                       ),
                     ),
-                    IconButton(
-                        icon: const Icon(
-                          Icons.layers_clear,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            points.clear();
-                          });
-                        }),
+                    SizedBox(
+                      width: width * 0.1,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (drawingPoints.length <
+                              historyDrawingPoints.length) {
+                            final index = drawingPoints.length;
+                            drawingPoints.add(historyDrawingPoints[index]);
+                          }
+                        });
+                      },
+                      child: Container(
+                        width: width * 0.15,
+                        height: height * 0.07,
+                        decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(20))),
+                        child: const Icon(Icons.redo),
+                      ),
+                    )
                   ],
-                ),
-              )
-            ],
-          ),
-        )
-      ]),
-    ));
+                )
+              ],
+            ),
+          )
+        ]),
+      ),
+    );
   }
 
   Future<bool> colorPickerDialog() async {
@@ -156,7 +227,7 @@ class _PainterState extends State<Painter> {
       // Update the dialogPickerColor using the callback.
       onColorChanged: (Color color) => setState(() => selectedColor = color),
       width: 40,
-      height: 40,
+      height: 30,
       borderRadius: 4,
       spacing: 5,
       runSpacing: 5,

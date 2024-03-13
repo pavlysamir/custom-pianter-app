@@ -1,39 +1,39 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:painter_art/models/drawing_area.dart';
 
-class MyCustomPainter extends CustomPainter {
-  final List<DrawingArea> points;
+class DrawingPainter extends CustomPainter {
+  final List<DrawingPoint> drawingPoints;
 
-  MyCustomPainter({required this.points});
+  DrawingPainter({required this.drawingPoints});
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint background = Paint()..color = Colors.white;
     Rect rect = Rect.fromLTWH(0, 0, size.width, size.height);
     canvas.drawRect(rect, background);
-    //canvas.clipRect(rect);
+    for (var drawingPoint in drawingPoints) {
+      final paint = Paint()
+        ..color = drawingPoint.color
+        ..isAntiAlias = true
+        ..strokeWidth = drawingPoint.width
+        ..strokeCap = StrokeCap.round;
 
-    if (points.isNotEmpty) {
-      for (int x = 0; x < points.length - 1; x++) {
-        canvas.drawLine(
-          points[x].point,
-          points[x + 1].point,
-          points[x].areaPaint,
-        );
-        canvas.drawPoints(
-          PointMode.points,
-          [points[x].point],
-          points[x].areaPaint,
-        );
+      for (var i = 0; i < drawingPoint.offsets.length; i++) {
+        var notLastOffset = i != drawingPoint.offsets.length - 1;
+
+        if (notLastOffset) {
+          final current = drawingPoint.offsets[i];
+          final next = drawingPoint.offsets[i + 1];
+          canvas.drawLine(current, next, paint);
+        } else {
+          // Draw nothing
+        }
       }
     }
   }
 
   @override
-  bool shouldRepaint(MyCustomPainter oldDelegate) {
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
-    // oldDelegate.points != points;
   }
 }

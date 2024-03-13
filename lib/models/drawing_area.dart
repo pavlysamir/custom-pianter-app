@@ -1,8 +1,24 @@
-import 'dart:ui';
+import 'package:flutter/material.dart';
 
-class DrawingArea {
-  Offset point;
-  Paint areaPaint;
+class DrawingPoint {
+  int id;
+  List<Offset> offsets;
+  Color color;
+  double width;
 
-  DrawingArea({required this.point, required this.areaPaint});
+  DrawingPoint({
+    this.id = -1,
+    this.offsets = const [],
+    this.color = Colors.black,
+    this.width = 2,
+  });
+
+  DrawingPoint copyWith({List<Offset>? offsets}) {
+    return DrawingPoint(
+      id: id,
+      color: color,
+      width: width,
+      offsets: offsets ?? this.offsets,
+    );
+  }
 }
