@@ -13,10 +13,12 @@ class DrawingPainter extends CustomPainter {
     canvas.drawRect(rect, background);
     for (var drawingPoint in drawingPoints) {
       final paint = Paint()
-        ..color = drawingPoint.color
-        ..isAntiAlias = true
-        ..strokeWidth = drawingPoint.width
-        ..strokeCap = StrokeCap.round;
+            ..color = drawingPoint.color.withOpacity(drawingPoint.opacity)
+            ..isAntiAlias = true
+            ..strokeWidth = drawingPoint.width
+            ..strokeCap = StrokeCap.round
+          //..maskFilter = MaskFilter.blur(BlurStyle.normal, 4)
+          ;
 
       for (var i = 0; i < drawingPoint.offsets.length; i++) {
         var notLastOffset = i != drawingPoint.offsets.length - 1;

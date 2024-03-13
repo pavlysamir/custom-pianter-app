@@ -13,19 +13,11 @@ class Painter extends StatefulWidget {
 class _PainterState extends State<Painter> {
   late double strokeWidth;
 
-  final List<Color> availableColors = [
-    Colors.black,
-    Colors.red,
-    Colors.amber,
-    Colors.blue,
-    Colors.green,
-    Colors.brown,
-  ];
-
   List<DrawingPoint> historyDrawingPoints = [];
   List<DrawingPoint> drawingPoints = [];
   Color selectedColor = Colors.black;
   // double selectedWidth = 2.0;
+  double opacity = 1.0;
   DrawingPoint? currentDrawingPoint;
 
   @override
@@ -78,11 +70,11 @@ class _PainterState extends State<Painter> {
                     onPanStart: (details) {
                       setState(() {
                         currentDrawingPoint = DrawingPoint(
-                          id: DateTime.now().microsecondsSinceEpoch,
-                          offsets: [details.localPosition],
-                          color: selectedColor,
-                          width: strokeWidth,
-                        );
+                            id: DateTime.now().microsecondsSinceEpoch,
+                            offsets: [details.localPosition],
+                            color: selectedColor,
+                            width: strokeWidth,
+                            opacity: opacity);
                         if (currentDrawingPoint != null) {
                           drawingPoints.add(currentDrawingPoint!);
                           historyDrawingPoints = List.of(drawingPoints);
@@ -214,7 +206,25 @@ class _PainterState extends State<Painter> {
                 )
               ],
             ),
-          )
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 80,
+            right: 0,
+            bottom: 200,
+            child: RotatedBox(
+              quarterTurns: 3, // 270 degree
+              child: Slider(
+                value: opacity,
+                min: 0.0,
+                max: 1.0,
+                onChanged: (value) {
+                  setState(() {
+                    opacity = value;
+                  });
+                },
+              ),
+            ),
+          ),
         ]),
       ),
     );
